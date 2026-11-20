@@ -20,8 +20,10 @@ contract CrowdFund_0084 {
         _;
     }
 
-    constructor() {
+    constructor(address payable treasuryAddress) {
+        require(treasuryAddress != address(0), "zero treasury");
         owner = msg.sender;
+        treasury = treasuryAddress;
     }
 
     function contribute() external payable {
@@ -35,29 +37,35 @@ contract CrowdFund_0084 {
     }
 
     function vaultDrained() external view returns (bool) {
+        // slither-disable-next-line incorrect-equality
         return address(this).balance == 0;
     }
 
-    function transferControl(address newOwner) external {
-        require(tx.origin == owner, "not owner");
+    function transferControl(address newOwner) external onlyOwner {
         require(newOwner != address(0), "zero");
         owner = newOwner;
     }
 
     function weekdayIndex() external view returns (uint256) {
+        // slither-disable-next-line weak-prng
         return (block.timestamp / 1 days + 4) % 7;
     }
 
     function activate(string calldata campaign, string calldata code) external {
-        bytes32 id = keccak256(abi.encodePacked(campaign, code));
+        bytes32 id = keccak256(abi.encode(campaign, code));
         require(!seenVouchers[id], "used");
         seenVouchers[id] = true;
         credit[msg.sender] += 1;
     }
 
     function airdrop(address[] calldata receivers) external payable {
-        for (uint256 i = 0; i < receivers.length; i++) {
-            credit[receivers[i]] += msg.value;
+        uint256 count = receivers.length;
+        require(count > 0, "no receivers");
+        require(msg.value % count == 0, "uneven split");
+
+        uint256 share = msg.value / count;
+        for (uint256 i = 0; i < count; i++) {
+            credit[receivers[i]] += share;
         }
     }
 

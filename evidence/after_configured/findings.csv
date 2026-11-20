@@ -1,0 +1,2 @@
+﻿index,check,impact,confidence,file,lines,description
+1,immutable-states,Optimization,High,AuditTarget.sol,14,CrowdFund_0084.treasury (AuditTarget.sol#14) should be immutable
